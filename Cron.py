@@ -5,22 +5,32 @@ import json
 import subprocess
 from Email import Email
 from SQSConnection import SQSConnection
+from S3Connection import S3Connection
 from threading import Thread
 
 
-def execute_test(git_url):
-    print('Se ejecuta la prueba')
-    subprocess.call(['cd', '/home/ubuntu'])
-    subprocess.call(['git', 'clone', git_url])
-
+def execute_test(git_url, test_id):
     suffix = git_url.index('.git')
     last_slash = git_url.rindex('/') + 1
     path = git_url[last_slash:suffix]
 
-    subprocess.call(['cd', path])
-    output = subprocess.call(['mutode', '-c', '1', './'])
+    dir_name = test_id + path
+    # dir_name2 = dir_name + '/' + path
+    output = subprocess.call(['sh', 'script.sh', dir_name, git_url, path])
+    mutode_path = './' + dir_name + '/' + path +'/.mutode'
     if output < 0:
         print('error en ejecucion de prueba')
+
+    try:
+        print('----1-----')
+        s3_connection = S3Connection(Settings.AWS_STORAGE_BUCKET_NAME_S3)
+        print('----2-----')
+        with s3_connection:
+            print('----3-----')
+            s3_connection.upload(mutode_path, dir_name)
+            print('----4-----')
+    except Exception as e:
+        print(e)
 
 def process():
     try:
@@ -29,12 +39,12 @@ def process():
         with sqs_connection:
             sqs_connection.receive()
             if sqs_connection.message is not '':
-                message_body = sqs_connection.message.get('Body')
-                msg = json.loads(message_body)
+                message_attributes = sqs_connection.message.get('MessageAttributes')
+                git_url = message_attributes['script']['StringValue']
+                test_id = message_attributes['Id']['StringValue']
                 #Aqui va la conversion del json
-                git_url = msg['script']
-                sqs_connection.delete()
-                execute_test(git_url)
+                # sqs_connection.delete()
+                execute_test(git_url, test_id)
                 # if Settings.EMAIL_SEND == 'Y':
                 #     Email.send_email(email=email, tittle=tittle, name=user_first_name)
 
@@ -43,7 +53,7 @@ def process():
 
 
 if __name__ == '__main__':
-    while True:
+    #while True:
         Thread(target=process).start()
         st = str(datetime.datetime.now())
         print(st + ' : alive')
