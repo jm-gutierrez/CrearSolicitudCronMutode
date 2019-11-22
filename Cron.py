@@ -32,7 +32,7 @@ def process():
                 message_body = sqs_connection.message.get('Body')
                 msg = json.loads(message_body)
                 #Aqui va la conversion del json
-                git_url = msg['git']
+                git_url = msg['script']
                 sqs_connection.delete()
                 execute_test(git_url)
                 # if Settings.EMAIL_SEND == 'Y':
