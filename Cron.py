@@ -18,17 +18,15 @@ def execute_test(git_url, test_id):
     # dir_name2 = dir_name + '/' + path
     output = subprocess.call(['sh', 'script.sh', dir_name, git_url, path])
     mutode_path = './' + dir_name + '/' + path +'/.mutode'
+    subprocess.call(['zip', '-r', '-X', dir_name+'.zip', mutode_path])
+
     if output < 0:
         print('error en ejecucion de prueba')
 
     try:
-        print('----1-----')
-        s3_connection = S3Connection(Settings.AWS_STORAGE_BUCKET_NAME_S3)
-        print('----2-----')
-        with s3_connection:
-            print('----3-----')
-            s3_connection.upload(mutode_path, dir_name)
-            print('----4-----')
+        s3_connection = S3Connection()
+        # with s3_connection:
+        s3_connection.upload('./' + dir_name + '.zip', dir_name + '.zip')
     except Exception as e:
         print(e)
 

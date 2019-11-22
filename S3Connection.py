@@ -4,28 +4,17 @@ import Settings
 
 
 class S3Connection:
-    def __init__(self, bucket):
-        self.exists = True
-        self.session = boto3.Session(
-            aws_access_key_id=Settings.AWS_ACCESS_KEY_ID_S3,
-            aws_secret_access_key=Settings.AWS_SECRET_ACCESS_KEY_S3,
-        )
-        self.s3 = self.session.resource('s3')
-        self.bucket = self.s3.Bucket(bucket)
+    s3c = boto3.client('s3',
+                       aws_access_key_id=Settings.AWS_ACCESS_KEY_ID_S3,
+                       aws_secret_access_key=Settings.AWS_SECRET_ACCESS_KEY_S3,
+                       )
+    s3r = boto3.resource('s3',
+                         aws_access_key_id=Settings.AWS_ACCESS_KEY_ID_S3,
+                         aws_secret_access_key=Settings.AWS_SECRET_ACCESS_KEY_S3,
+                         )
 
-    def __enter__(self):
-        try:
-            self.session = boto3.Session(
-                aws_access_key_id=Settings.AWS_ACCESS_KEY_ID_S3,
-                aws_secret_access_key=Settings.AWS_SECRET_ACCESS_KEY_S3,
-            )
-            self.s3 = self.session.resource('s3')
-            self.exists = True
-        except ConnectionError:
-            print("No se puede conectar a S3")
-
-        except:
-            print("Error General S3")
+    def __init__(self):
+        return None
 
     def read(self, key, download_key):
         try:
@@ -48,7 +37,12 @@ class S3Connection:
 
     def upload(self, file, key):
         try:
-            self.bucket.upload_file(filename=file, key=key, ExtraArgs={'ACL': 'public-read'})
+            # self.bucket.upload_file(filename=file, key=key, ExtraArgs={'ACL': 'public-read'})
+            print('File: ' + file)
+            bucket_name = 'apks-pruebas-automaticas'
+            print('bucket_name ' + bucket_name)
+            print('key ' + key)
+            self.s3c.upload_file(file, bucket_name, key, ExtraArgs={'ACL': 'public-read'})
 
         except botocore.exceptions.ClientError as e:
             # If a client error is thrown, then check that it was a 404 error.
