@@ -33,12 +33,17 @@ def execute_test(git_url, test_id):
 def process():
     try:
         sqs_connection = SQSConnection(Settings.AWS_QUEUE_URL_OUT_MUTODE)
-
         with sqs_connection:
             sqs_connection.receive()
             if sqs_connection.message is not '':
+                message_body = sqs_connection.message.get('Body')
+                msg = json.loads(message_body)
+                # Aqui va la conversion del json
+                listapruebas = msg["pruebas"][0]
                 message_attributes = sqs_connection.message.get('MessageAttributes')
-                git_url = message_attributes['script']['StringValue']
+                test_id = message_attributes['Id']['StringValue']
+                script = listapruebas["script"]
+                git_url = script
                 test_id = message_attributes['Id']['StringValue']
                 #Aqui va la conversion del json
                 # sqs_connection.delete()
@@ -51,7 +56,7 @@ def process():
 
 
 if __name__ == '__main__':
-    #while True:
+    while True:
         Thread(target=process).start()
         st = str(datetime.datetime.now())
         print(st + ' : alive')
